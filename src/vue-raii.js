@@ -35,8 +35,8 @@ function raiiSetup() {
  * id to be accessible.
  */
 function raiiGetResource(id) {
-  if (id in this._raii.byId[id]) {
-    return Promise.resolve(this._raii.byId[id]);
+  if (id in this._raii.byId) {
+    return this._raii.byId[id];
   } else {
     throw new Error('Resource not found.');
   }
@@ -46,7 +46,7 @@ function raiiGetResource(id) {
  * Registers, creates and hooks resource into lifetime of component.
  */
 async function raiiHookResource(options) {
-  await this._raii.constructionQueue.add(async () => {
+  let promise = this._raii.constructionQueue.add(async () => {
     let resource = await options.constructor.call(this);
 
     this._raii.all.push({
@@ -55,9 +55,19 @@ async function raiiHookResource(options) {
     });
 
     if (options.id !== undefined) {
+      // Now that we have the resource we can replace the promise.
       this._raii.byId[options.id] = resource;
     }
+
+    return resource;
   });
+
+  if (options.id !== undefined) {
+    // When retrieving resource it will wait for constructor to finish.
+    this._raii.byId[options.id] = promise;
+  }
+
+  await promise;
 }
 
 exports.install = function (Vue) {

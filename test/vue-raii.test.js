@@ -157,3 +157,47 @@ it('awaits destructor promise', async () => {
   assert(spy.getCall(0).calledWith(2));
   assert(spy.getCall(1).calledWith(1));
 });
+
+it('retrieves resource by id', async () => {
+  let vue = new Vue({
+    data() {
+      this.$raii({
+        id: 'resourceid1',
+        constructor: () => 1,
+        destructor: () => {}
+      });
+
+      this.$raii({
+        id: 'resourceid2',
+        constructor: () => 2,
+        destructor: () => {}
+      });
+
+      return {};
+    }
+  });
+
+  assert.equal(await vue.$raii('resourceid1'), 1);
+  assert.equal(await vue.$raii('resourceid2'), 2);
+});
+
+it('waits for constructor to finish before retrieving resource', async () => {
+  let vue = new Vue({
+    data() {
+      this.$raii({
+        id: 'resourceid',
+        constructor: () => new Promise(
+          (resolve) => setTimeout(
+            () => { resolve(1); },
+            10
+          )
+        ),
+        destructor: () => {}
+      });
+
+      return {};
+    }
+  });
+
+  assert.equal(await vue.$raii('resourceid'), 1);
+});
