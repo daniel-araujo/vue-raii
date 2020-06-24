@@ -201,3 +201,27 @@ it('waits for constructor to finish before retrieving resource', async () => {
 
   assert.equal(await vue.$raii('resourceid'), 1);
 });
+
+it('retrieved resource is a reference and not a copy', async () => {
+  let vue = new Vue({
+    data() {
+      this.$raii({
+        id: 'resourceid',
+        constructor: () => ({
+          existingField: 1,
+        }),
+        destructor: () => {}
+      });
+
+      return {};
+    }
+  });
+
+  let resource = await vue.$raii('resourceid');
+  resource.newField = 2;
+
+  assert.deepEqual(await vue.$raii('resourceid'), {
+    existingField: 1,
+    newField: 2
+  });
+});
