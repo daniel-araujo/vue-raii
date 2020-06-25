@@ -30,26 +30,22 @@ it('calls constructor on the spot', async () => {
 it('awaits constructor promise', async () => {
   let spy = sinon.spy();
 
+  let vue = new Vue();
+
   await new Promise((resolve, reject) => {
-    new Vue({
-      data() {
-        this.$raii({
-          constructor: () => new Promise(
-            (resolve) => setTimeout(
-              () => { spy(1); resolve(); },
-              10
-            )
-          ),
-          destructor(resource) {}
-        });
+    vue.$raii({
+      constructor: () => new Promise(
+        (resolve) => setTimeout(
+          () => { spy(1); resolve(); },
+          10
+        )
+      ),
+      destructor(resource) {}
+    });
 
-        this.$raii({
-          constructor: () => { spy(2); resolve(); },
-          destructor(resource) {}
-        });
-
-        return {};
-      }
+    vue.$raii({
+      constructor: () => { spy(2); resolve(); },
+      destructor(resource) {}
     });
   });
 
@@ -58,16 +54,12 @@ it('awaits constructor promise', async () => {
 });
 
 it('destructor receives resource as first argument', async () => {
-  let arg = await new Promise((resolve, reject) => {
-    let vue = new Vue({
-      data() {
-        this.$raii({
-          constructor: () => 1,
-          destructor: (resource) => resolve(resource)
-        });
+  let vue = new Vue();
 
-        return {};
-      }
+  let arg = await new Promise((resolve, reject) => {
+    vue.$raii({
+      constructor: () => 1,
+      destructor: (resource) => resolve(resource)
     });
 
     vue.$destroy();
@@ -80,16 +72,12 @@ it('calls destructor after component is destroyed', async () => {
   let beforeDestroySpy = sinon.spy();
   let destructorSpy = sinon.spy();
 
-  await new Promise((resolve, reject) => {
-    let vue = new Vue({
-      data() {
-        this.$raii({
-          constructor() {},
-          destructor() { destructorSpy(); resolve(); }
-        });
+  let vue = new Vue();
 
-        return {};
-      }
+  await new Promise((resolve, reject) => {
+    vue.$raii({
+      constructor() {},
+      destructor() { destructorSpy(); resolve(); }
     });
 
     beforeDestroySpy();
@@ -102,21 +90,17 @@ it('calls destructor after component is destroyed', async () => {
 it('calls destructor in opposite order of construction', async () => {
   let spy = sinon.spy();
 
+  let vue = new Vue();
+
   await new Promise((resolve, reject) => {
-    let vue = new Vue({
-      data() {
-        this.$raii({
-          constructor() {},
-          destructor() { spy(1); resolve(); }
-        });
+    vue.$raii({
+      constructor() {},
+      destructor() { spy(1); resolve(); }
+    });
 
-        this.$raii({
-          constructor() {},
-          destructor() { spy(2); }
-        });
-
-        return {};
-      }
+    vue.$raii({
+      constructor() {},
+      destructor() { spy(2); }
     });
 
     vue.$destroy();
@@ -129,26 +113,22 @@ it('calls destructor in opposite order of construction', async () => {
 it('awaits destructor promise', async () => {
   let spy = sinon.spy();
 
+  let vue = new Vue();
+
   await new Promise((resolve, reject) => {
-    let vue = new Vue({
-      data() {
-        this.$raii({
-          constructor() {},
-          destructor() { spy(1); resolve(); }
-        });
+    vue.$raii({
+      constructor() {},
+      destructor() { spy(1); resolve(); }
+    });
 
-        this.$raii({
-          constructor() {},
-          destructor: () => new Promise(
-            (resolve) => setTimeout(
-              () => { spy(2); resolve(); },
-              10
-            )
-          )
-        });
-
-        return {};
-      }
+    vue.$raii({
+      constructor() {},
+      destructor: () => new Promise(
+        (resolve) => setTimeout(
+          () => { spy(2); resolve(); },
+          10
+        )
+      )
     });
 
     vue.$destroy();
@@ -159,22 +139,18 @@ it('awaits destructor promise', async () => {
 });
 
 it('retrieves resource by id', async () => {
-  let vue = new Vue({
-    data() {
-      this.$raii({
-        id: 'resourceid1',
-        constructor: () => 1,
-        destructor: () => {}
-      });
+  let vue = new Vue();
 
-      this.$raii({
-        id: 'resourceid2',
-        constructor: () => 2,
-        destructor: () => {}
-      });
+  vue.$raii({
+    id: 'resourceid1',
+    constructor: () => 1,
+    destructor: () => {}
+  });
 
-      return {};
-    }
+  vue.$raii({
+    id: 'resourceid2',
+    constructor: () => 2,
+    destructor: () => {}
   });
 
   assert.equal(await vue.$raii('resourceid1'), 1);
@@ -182,39 +158,31 @@ it('retrieves resource by id', async () => {
 });
 
 it('waits for constructor to finish before retrieving resource', async () => {
-  let vue = new Vue({
-    data() {
-      this.$raii({
-        id: 'resourceid',
-        constructor: () => new Promise(
-          (resolve) => setTimeout(
-            () => { resolve(1); },
-            10
-          )
-        ),
-        destructor: () => {}
-      });
+  let vue = new Vue();
 
-      return {};
-    }
+  vue.$raii({
+    id: 'resourceid',
+    constructor: () => new Promise(
+      (resolve) => setTimeout(
+        () => { resolve(1); },
+        10
+      )
+    ),
+    destructor: () => {}
   });
 
   assert.equal(await vue.$raii('resourceid'), 1);
 });
 
 it('retrieved resource is a reference and not a copy', async () => {
-  let vue = new Vue({
-    data() {
-      this.$raii({
-        id: 'resourceid',
-        constructor: () => ({
-          existingField: 1,
-        }),
-        destructor: () => {}
-      });
+  let vue = new Vue();
 
-      return {};
-    }
+  vue.$raii({
+    id: 'resourceid',
+    constructor: () => ({
+      existingField: 1,
+    }),
+    destructor: () => {}
   });
 
   let resource = await vue.$raii('resourceid');
