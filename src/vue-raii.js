@@ -67,7 +67,7 @@ async function raiiHookResource(options) {
     this._raii.byId[options.id] = promise;
   }
 
-  await promise;
+  return await promise;
 }
 
 exports.install = function (Vue) {

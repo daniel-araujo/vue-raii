@@ -193,3 +193,15 @@ it('retrieved resource is a reference and not a copy', async () => {
     newField: 2
   });
 });
+
+it('registration returns promise that resolves to resource', async () => {
+  let vue = new Vue();
+
+  let returnValue = vue.$raii({
+    constructor: () => 1,
+    destructor: () => {}
+  });
+
+  assert(returnValue instanceof Promise);
+  assert.equal(await returnValue, 1);
+});
