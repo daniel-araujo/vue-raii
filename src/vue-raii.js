@@ -23,7 +23,9 @@ function raiiSetup() {
     for (let i = this._raii.all.length - 1; i >= 0; i--) {
       let e = this._raii.all[i];
 
-      await e.destructor(e.resource);
+      if (e.destructor !== undefined) {
+        await e.destructor(e.resource);
+      }
     }
 
     delete this._raii;

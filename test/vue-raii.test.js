@@ -39,13 +39,11 @@ it('awaits constructor promise', async () => {
           () => { spy(1); resolve(); },
           10
         )
-      ),
-      destructor(resource) {}
+      )
     });
 
     vue.$raii({
-      constructor: () => { spy(2); resolve(); },
-      destructor(resource) {}
+      constructor: () => { spy(2); resolve(); }
     });
   });
 
@@ -143,14 +141,12 @@ it('retrieves resource by id', async () => {
 
   vue.$raii({
     id: 'resourceid1',
-    constructor: () => 1,
-    destructor: () => {}
+    constructor: () => 1
   });
 
   vue.$raii({
     id: 'resourceid2',
-    constructor: () => 2,
-    destructor: () => {}
+    constructor: () => 2
   });
 
   assert.equal(await vue.$raii('resourceid1'), 1);
@@ -167,8 +163,7 @@ it('waits for constructor to finish before retrieving resource', async () => {
         () => { resolve(1); },
         10
       )
-    ),
-    destructor: () => {}
+    )
   });
 
   assert.equal(await vue.$raii('resourceid'), 1);
@@ -181,8 +176,7 @@ it('retrieved resource is a reference and not a copy', async () => {
     id: 'resourceid',
     constructor: () => ({
       existingField: 1,
-    }),
-    destructor: () => {}
+    })
   });
 
   let resource = await vue.$raii('resourceid');
@@ -198,10 +192,19 @@ it('registration returns promise that resolves to resource', async () => {
   let vue = new Vue();
 
   let returnValue = vue.$raii({
-    constructor: () => 1,
-    destructor: () => {}
+    constructor: () => 1
   });
 
   assert(returnValue instanceof Promise);
   assert.equal(await returnValue, 1);
+});
+
+it('destructor is optional', async () => {
+  let vue = new Vue();
+
+  await vue.$raii({
+    constructor: () => 1,
+  });
+
+  vue.$destroy();
 });
