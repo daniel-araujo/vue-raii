@@ -45,7 +45,7 @@ function raiiGetResource(id) {
 /*
  * Registers, creates and hooks resource into lifetime of component.
  */
-async function raiiHookResource(options) {
+function raiiHookResource(options) {
   let promise = this._raii.constructionQueue.add(async () => {
     let resource = await options.constructor.call(this);
 
@@ -67,7 +67,7 @@ async function raiiHookResource(options) {
     this._raii.byId[options.id] = promise;
   }
 
-  return await promise;
+  return promise;
 }
 
 exports.install = function (Vue) {
