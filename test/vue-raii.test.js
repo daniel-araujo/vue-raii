@@ -208,3 +208,54 @@ it('destructor is optional', async () => {
 
   vue.$destroy();
 });
+
+it('throwing an error inside a constructor will not prevent remaining constructor from running', async () => {
+  let vue = new Vue();
+
+  await new Promise((resolve) => {
+    process.once('unhandledRejection', error => {
+      if (error.message === 'thrown in a constructor') {
+        // Ignored.
+      } else {
+        throw error;
+      }
+    });
+
+    vue.$raii({
+      constructor() { throw new Error('thrown in a constructor') },
+    });
+
+    vue.$raii({
+      constructor() { resolve(); },
+    });
+
+    vue.$destroy();
+  });
+});
+
+it('throwing an error inside a destructor will not prevent remaining destructors from running', async () => {
+  let vue = new Vue();
+
+  await new Promise((resolve) => {
+    process.once('unhandledRejection', error => {
+      if (error.message === 'thrown in a destructor') {
+        // Ignored.
+      } else {
+        throw error;
+      }
+    });
+
+    vue.$raii({
+      constructor() {},
+      destructor() { resolve(); },
+    });
+
+    vue.$raii({
+      constructor() {},
+      destructor() { throw new Error('thrown in a destructor') },
+    });
+
+    vue.$destroy();
+  });
+});
+

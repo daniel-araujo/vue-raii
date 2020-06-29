@@ -14,17 +14,18 @@ function raiiSetup() {
     // Resources by id.
     byId: {},
 
-    constructionQueue: new PQueue({ concurrency: 1 })
+    // Linear execution queue for constructors and destructors.
+    execQueue: new PQueue({ concurrency: 1 })
   };
 
   this.$on('hook:destroyed', async () => {
-    await this._raii.constructionQueue.onIdle();
+    await this._raii.execQueue.onIdle();
 
     for (let i = this._raii.all.length - 1; i >= 0; i--) {
       let e = this._raii.all[i];
 
       if (e.destructor !== undefined) {
-        await e.destructor(e.resource);
+        this._raii.execQueue.add(() => e.destructor(e.resource));
       }
     }
 
@@ -48,7 +49,7 @@ function raiiGetResource(id) {
  * Registers, creates and hooks resource into lifetime of component.
  */
 function raiiHookResource(options) {
-  let promise = this._raii.constructionQueue.add(async () => {
+  let promise = this._raii.execQueue.add(async () => {
     let resource = await options.constructor.call(this);
 
     this._raii.all.push({
