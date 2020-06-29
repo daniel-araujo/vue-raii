@@ -61,7 +61,7 @@ Additionally, the socket can only be used after it has fully initialized.
     return {
       message: '',
     };
-  }
+  },
 
   methods: {
     async sendMessage() {

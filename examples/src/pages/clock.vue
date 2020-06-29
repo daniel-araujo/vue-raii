@@ -1,7 +1,8 @@
 <template>
   <div>
     <p>Here we have a setInterval call bound to this component. When you move to
-    another page, clearInterval will be called automatically.</p>
+    another page, clearInterval will be called automatically. Open the console
+    and see for yourself.</p>
 
     <div class="clock">
       <div class="clock__hour" :style="hourStyle"></div>
