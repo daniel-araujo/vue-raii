@@ -10,7 +10,15 @@ Not sure what this means?
 Ever had to register a function somewhere and then had to deregister it once the
 component was no longer in use? That is a form of resource management. With this
 plugin you will be able to define such relationships in a very straightforward
-way. Check out the examples below.
+way and with the following guarantees:
+
+- Order of construction. Multiple resources can be bound to the same component
+  and their constructors run one after the other while destructors run in
+  reverse order.
+- Support for promises. When constructors return promises, destructors are only
+  run after promises have fulfilled.
+- Manual destruction. Need to destroy a resource even before the component is
+  destroyed? Can do.
 
 
 ## Examples
