@@ -63,13 +63,15 @@ function raiiCreateResource(options) {
     toDestroy: false
   };
 
+  // Storing a promise that resolves to the resource.
   entry.resource = this._raii.execQueue.add(async () => {
-    let resource = await options.constructor.call(this);
+    // Replace promise with resource.
+    entry.resource = await options.constructor.call(this);
 
     // Now it can be added to the ordered list of constructed resources.
     this._raii.all.push(entry);
 
-    return resource;
+    return entry.resource;
   });
 
   if (options.id !== undefined) {

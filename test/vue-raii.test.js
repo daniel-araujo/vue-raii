@@ -51,19 +51,65 @@ it('awaits constructor promise', async () => {
   assert.equal(spy.getCall(1).firstArg, 2);
 });
 
-it('destructor receives resource as first argument', async () => {
+it('passes resource to destructor as first argument when constructor returns resource synchronously', async () => {
+  let spy = sinon.spy();
+
   let vue = new Vue();
 
-  let arg = await new Promise((resolve, reject) => {
-    vue.$raii({
+  await new Promise(async (resolve, reject) => {
+    await vue.$raii({
       constructor: () => 1,
-      destructor: (resource) => resolve(resource)
+      destructor: (resource) => {
+        spy(resource);
+        resolve(resource);
+      }
     });
 
     vue.$destroy();
   });
 
-  assert.equal(arg, 1);
+  assert.equal(spy.getCall(0).firstArg, 1);
+});
+
+it('passes resource to destructor as first argument when constructor returns a promise', async () => {
+  let spy = sinon.spy();
+
+  let vue = new Vue();
+
+  await new Promise(async (resolve, reject) => {
+    await vue.$raii({
+      constructor: async () => 1,
+      destructor: (resource) => {
+        spy(resource);
+        resolve(resource);
+      }
+    });
+
+    vue.$destroy();
+  });
+
+  assert.equal(spy.getCall(0).firstArg, 1);
+});
+
+it('passes resource to destructor when manually destroying', async () => {
+  let spy = sinon.spy();
+
+  let vue = new Vue();
+
+  await new Promise(async (resolve, reject) => {
+    await vue.$raii({
+      id: 'resource',
+      constructor: async () => 1,
+      destructor: (resource) => {
+        spy(resource);
+        resolve(resource);
+      }
+    });
+
+    vue.$raii('resource', 'destroy');
+  });
+
+  assert.equal(spy.getCall(0).firstArg, 1);
 });
 
 it('calls destructor after component is destroyed', async () => {
@@ -359,4 +405,24 @@ it('resource will not be accessible after being destroyed while it was being cre
   );
 
   await promise;
+});
+
+it('bugfix: destructor does not receive resolved resource when destruction is dispatched while constructor is running', async () => {
+  let spy = sinon.spy();
+
+  let vue = new Vue();
+
+  await new Promise((resolve, reject) => {
+    vue.$raii({
+      constructor: () => new Promise((resolve) => setTimeout(() => resolve(1), 10)),
+      destructor: (resource) => {
+        spy(resource);
+        resolve(resource);
+      }
+    });
+
+    vue.$destroy();
+  });
+
+  assert.equal(spy.getCall(0).firstArg, 1);
 });
