@@ -259,3 +259,104 @@ it('throwing an error inside a destructor will not prevent remaining destructors
   });
 });
 
+it('resource is no longer accessible after being destroyed', async () => {
+  let vue = new Vue();
+
+  await vue.$raii({
+    id: 'asd',
+    constructor: () => 1
+  });
+
+  await vue.$raii('asd', 'destroy');
+
+  await assert.rejects(
+    async () => vue.$raii('asd'),
+    {
+      name: 'Error',
+      message: 'Resource not found.'
+    }
+  );
+});
+
+it('resource is not accessible while being destroyed', async () => {
+  let vue = new Vue();
+
+  await vue.$raii({
+    id: 'asd',
+    constructor: () => 1,
+    destructor: () => new Promise((resolve) => setTimeout(resolve, 10))
+  });
+
+  let promise = vue.$raii('asd', 'destroy');
+
+  await assert.rejects(
+    async () => vue.$raii('asd'),
+    {
+      name: 'Error',
+      message: 'Resource not found.'
+    }
+  );
+
+  await promise;
+});
+
+it('resource will not exist when being accessed while it was being created and then getting destroyed', async () => {
+  let vue = new Vue();
+
+  await new Promise((resolve) => {
+    vue.$raii({
+      id: 'asd',
+      constructor: () => {
+        resolve();
+        return new Promise((resolve) => setTimeout((resolve), 10))
+      },
+      destructor: () => new Promise((resolve) => setTimeout((resolve), 10)),
+    });
+  });
+
+  let getPromise = vue.$raii('asd');
+
+  let destroyPromise = vue.$raii('asd', 'destroy');
+
+  await assert.rejects(
+    async () => getPromise,
+    {
+      name: 'Error',
+      message: 'Resource not found.'
+    }
+  );
+
+  await destroyPromise;
+});
+
+it('resource will not be accessible after being destroyed while it was being created', async () => {
+  let spy = sinon.spy();
+
+  let vue = new Vue();
+
+  await new Promise((resolve) => {
+    vue.$raii({
+      id: 'asd',
+      constructor: () => {
+        resolve();
+        return new Promise((resolve) => setTimeout((resolve), 10))
+      },
+      destructor: () => {
+        spy('destructor');
+        return new Promise((resolve) => setTimeout((resolve), 10))
+      },
+    });
+  });
+
+  let promise = vue.$raii('asd', 'destroy');
+
+  await assert.rejects(
+    async () => vue.$raii('asd'),
+    {
+      name: 'Error',
+      message: 'Resource not found.'
+    }
+  );
+
+  await promise;
+});

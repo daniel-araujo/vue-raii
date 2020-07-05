@@ -8,7 +8,7 @@ let installed = false;
  */
 function raiiSetup() {
   this._raii = {
-    // All registered resources.
+    // All registered resources, ordered by construction time.
     all: [],
 
     // Resources by id.
@@ -37,9 +37,17 @@ function raiiSetup() {
  * Retrieves resource by id. The resource must be explicitly registered with an
  * id to be accessible.
  */
-function raiiGetResource(id) {
-  if (id in this._raii.byId) {
-    return this._raii.byId[id];
+async function raiiGetResource(id) {
+  if (id in this._raii.byId && !this._raii.byId[id].toDestroy) {
+    return Promise.resolve(this._raii.byId[id].resource)
+      .then((resource) => {
+        // For retrieval attempts made while it is being created.
+        if (!this._raii.byId[id].toDestroy) {
+          return resource;
+        } else {
+          throw new Error('Resource not found.');
+        }
+      });
   } else {
     throw new Error('Resource not found.');
   }
@@ -48,29 +56,66 @@ function raiiGetResource(id) {
 /*
  * Registers, creates and hooks resource into lifetime of component.
  */
-function raiiHookResource(options) {
-  let promise = this._raii.execQueue.add(async () => {
+function raiiCreateResource(options) {
+  let entry = {
+    resource: undefined,
+    destructor: options.destructor,
+    toDestroy: false
+  };
+
+  entry.resource = this._raii.execQueue.add(async () => {
     let resource = await options.constructor.call(this);
 
-    this._raii.all.push({
-      resource,
-      destructor: options.destructor
-    });
-
-    if (options.id !== undefined) {
-      // Now that we have the resource we can replace the promise.
-      this._raii.byId[options.id] = resource;
-    }
+    // Now it can be added to the ordered list of constructed resources.
+    this._raii.all.push(entry);
 
     return resource;
   });
 
   if (options.id !== undefined) {
-    // When retrieving resource it will wait for constructor to finish.
-    this._raii.byId[options.id] = promise;
+    this._raii.byId[options.id] = entry;
   }
 
-  return promise;
+  return entry.resource;
+}
+
+/*
+ * Destroys resource. If the resource does not exists, the method will do
+ * nothing. If the resource is being constructed then it will be destroyed as
+ * soon as it is ready.
+ */
+function raiiDestroyResource(id) {
+  if (this._raii.byId[id]) {
+    // This flag will allows us to prevent returning the resource if an attempt
+    // to retrieve it was made while it was being constructed.
+    this._raii.byId[id].toDestroy = true;
+  }
+
+  return this._raii.execQueue.add(async () => {
+    let entry = this._raii.byId[id];
+
+    if (entry === undefined) {
+      // Does not exist.
+      return;
+    }
+
+    try {
+      if (entry.destructor) {
+        await entry.destructor(entry.resource);
+      }
+    } finally {
+      // Now purge from the list of resources.
+      for (let i = 0; i < this._raii.all.length; i++) {
+        let e = this._raii.all[i];
+
+        if (e === entry) {
+          this._raii.all.splice(i, 1);
+        }
+      }
+
+      delete this._raii.byId[id];
+    }
+  });
 }
 
 exports.install = function (Vue) {
@@ -79,15 +124,19 @@ exports.install = function (Vue) {
     return;
   }
 
-  Vue.prototype.$raii = function (o) {
+  Vue.prototype.$raii = function (o, a) {
     if (!this._raii) {
       raiiSetup.call(this);
     }
 
     if (typeof o === 'string') {
-      return raiiGetResource.call(this, o);
+      if (a === undefined) {
+        return raiiGetResource.call(this, o);
+      } else if (a === 'destroy') {
+        return raiiDestroyResource.call(this, o);
+      }
     } else {
-      return raiiHookResource.call(this, o);
+      return raiiCreateResource.call(this, o);
     }
   };
 
