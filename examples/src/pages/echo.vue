@@ -1,54 +1,44 @@
 <template>
   <div>
-    <p>In this page you can send messages to a server that responds back with
-    the same contents. This is basically an echo chamber. A websocket connection
-    is established when this component is mounted and it will be closed when the
-    component is removed. Check the console.</p>
+    <p>In this page you get to join an echo chamber! A websocket connection is
+    established when you press the Join button. The connection is closed when
+    you either press the Leave button or when the component is removed from the
+    DOM, whichever happens first. Check the console.</p>
 
-    Message:
-    <form v-on:submit="sendMessage">
-      <input v-model="message">
-      <button>send</button>
-    </form>
+    <template v-if="joined">
+      <button @click="leave" :disabled="loading">Leave</button><br>
+      <br>
 
-    <br>
+      Message:
+      <form v-on:submit="sendMessage">
+        <input v-model="message">
+        <button>send</button>
+      </form>
 
-    Replies:
-    <div class="messages">
-      <div v-for="reply in replies">{{ reply }}</div>
-    </div>
+      <br>
+
+      Replies:
+      <div class="messages">
+        <div v-for="reply in replies">{{ reply }}</div>
+      </div>
+
+    </template>
+    <template v-else>
+
+      <button @click="join" :disabled="loading">JOIN!</button><br>
+      <br>
+      <template v-if="loading">Joining, please wait...</template>
+
+    </template>
   </div>
 </template>
 
 <script>
 export default {
   data() {
-    this.$raii({
-      id: 'socket',
-
-      constructor: () => new Promise((resolve, reject) => {
-        console.log('establishing connection to socket');
-
-        let socket = new WebSocket('wss://echo.websocket.org');
-
-        socket.addEventListener('open', () => {
-          console.log('opened socket');
-          resolve(socket);
-        });
-        socket.addEventListener('error', reject);
-        socket.addEventListener('message', (e) => {
-          this.replies.push(e.data);
-        });
-      }),
-
-      destructor: (socket) => {
-        console.log('closed socket');
-
-        socket.close();
-      }
-    });
-
     return {
+      joined: false,
+      loading: false,
       replies: [],
       message: '',
     };
@@ -65,6 +55,49 @@ export default {
       socket.send(this.message);
 
       this.message = '';
+    },
+
+    async join() {
+      this.loading = true;
+      try {
+        await this.$raii({
+          id: 'socket',
+
+          constructor: () => new Promise((resolve, reject) => {
+            console.log('establishing connection to socket');
+
+            let socket = new WebSocket('wss://echo.websocket.org');
+
+            socket.addEventListener('open', () => {
+              console.log('opened socket');
+              resolve(socket);
+            });
+            socket.addEventListener('error', reject);
+            socket.addEventListener('message', (e) => {
+              this.replies.push(e.data);
+            });
+          }),
+
+          destructor: (socket) => {
+            console.log('closed socket');
+
+            socket.close();
+          }
+        });
+        this.joined = true;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async leave() {
+      this.loading = true;
+      try {
+        await this.$raii('socket', 'destroy');
+        this.joined = false;
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }
