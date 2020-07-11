@@ -473,3 +473,32 @@ it('promise rejects when attempting to register a resource with an id that is be
 
   vue.$destroy();
 });
+
+it('does nothing when destroying a resource that does not exist', async () => {
+  let vue = new Vue();
+
+  await vue.$raii('resource', 'destroy');
+
+  vue.$destroy();
+});
+
+it('does nothing when destroying a resource while it is being destroyed', async () => {
+  let spy = sinon.spy();
+  let vue = new Vue();
+
+  vue.$raii({
+    id: 'resource',
+    constructor: () => 1,
+    destructor: () => {
+      spy();
+      return new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  })
+
+  vue.$raii('resource', 'destroy');
+  await vue.$raii('resource', 'destroy');
+
+  vue.$destroy();
+
+  assert.equal(spy.callCount, 1);
+});
