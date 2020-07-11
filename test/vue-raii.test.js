@@ -426,3 +426,50 @@ it('bugfix: destructor does not receive resolved resource when destruction is di
 
   assert.equal(spy.getCall(0).firstArg, 1);
 });
+
+it('promise rejects when attempting to register a resource with an id that is in use', async () => {
+  let vue = new Vue();
+
+  await vue.$raii({
+    id: 'resource',
+    constructor: () => 1
+  });
+
+  await assert.rejects(
+    () => vue.$raii({
+      id: 'resource',
+      constructor: () => 1
+    }),
+    {
+      name: 'Error',
+      message: 'Resource id already in use.'
+    }
+  );
+
+  vue.$destroy();
+});
+
+it('promise rejects when attempting to register a resource with an id that is being destroyed', async () => {
+  let vue = new Vue();
+
+  await vue.$raii({
+    id: 'resource',
+    constructor: () => 1,
+    destructor: () => new Promise((resolve) => setTimeout(() => resolve(), 10)),
+  });
+
+  vue.$raii('resource', 'destroy');
+
+  await assert.rejects(
+    () => vue.$raii({
+      id: 'resource',
+      constructor: () => 1
+    }),
+    {
+      name: 'Error',
+      message: 'Resource id already in use.'
+    }
+  );
+
+  vue.$destroy();
+});

@@ -56,12 +56,21 @@ async function raiiGetResource(id) {
 /*
  * Registers, creates and hooks resource into lifetime of component.
  */
-function raiiCreateResource(options) {
+async function raiiCreateResource(options) {
   let entry = {
     resource: undefined,
     destructor: options.destructor,
     toDestroy: false
   };
+
+  if (options.id !== undefined) {
+    if (this._raii.byId[options.id] !== undefined) {
+      // Already exists.
+      throw new Error('Resource id already in use.');
+    }
+
+    this._raii.byId[options.id] = entry;
+  }
 
   // Storing a promise that resolves to the resource.
   entry.resource = this._raii.execQueue.add(async () => {
@@ -73,10 +82,6 @@ function raiiCreateResource(options) {
 
     return entry.resource;
   });
-
-  if (options.id !== undefined) {
-    this._raii.byId[options.id] = entry;
-  }
 
   return entry.resource;
 }
