@@ -1,31 +1,40 @@
 # vue-raii
 
-> Resource acquisition is initialization.
+> Resource acquisition is initialization. -Bjarne Stroustrup
 
-What a mouthful. Anyway, this Vue plugin allows you to bind JavaScript resources
-to the lifetime of a component.
+Why, yes, I'm bringing a C++ idiom to Vue.js. This Vue plugin allows you to bind
+JavaScript resources to the lifetime of a component. Basically, if you:
 
-Not sure what this means?
+- need to register a function somewhere and then have to deregister it.
+- have an object where you have to call `open` to use it and then call `close`
+  when you're done with it
+- guarantee that a resource is destroyed before another
 
-Ever had to register a function somewhere and then had to deregister it once the
-component was no longer in use? That is a form of resource management. With this
-plugin you will be able to define such relationships in a very straightforward
-way and with the following guarantees:
+Then this plugin has you covered. It lets you define constructors and
+destructors such that:
 
-- Order of construction. Multiple resources can be bound to the same component
-  and their constructors run one after the other while destructors run in
-  reverse order.
-- Support for promises. When constructors return promises, destructors are only
-  run after promises have fulfilled.
-- Manual destruction. Need to destroy a resource even before the component is
-  destroyed? Can do.
+- Constructors run after each other in the order they were registered and
+  destructors run in reverse order when the component is destroyed.
+- When constructors return promises, destructors are only run after promises
+  have fulfilled. This plugin was made with `async` in mind.
+- Resources can be created at any point. You can create them in any method you
+  like. Want to establish a connection to a socket? Call a method that creates
+  the resource.
+- Resources can also be destroyed at any point. Destructors for manually
+  destroyed resources will not run again when the component gets destroyed.
+
+Unit tests are run through versions 2.0 to 2.6 of Vue.js
 
 
 ## Examples
 
-When using `setInterval`, you eventually have to call `clearInterval`. With this
-plugin you can be rest assured that `clearInterval` will be called when the
-component is removed from the DOM.
+Run `npm run examples` to see fully functional examples locally on your browser.
+There's a clock, an echo chamber and a dude that won't stop staring at your
+mouse. Quite persuasive, if you ask me!
+
+Here are just a few small examples:
+
+Using `setInterval` and `clearInterval`:
 
 ```js
 {
@@ -49,8 +58,7 @@ component is removed from the DOM.
 }
 ```
 
-Have to listen to DOM events? Just add the event in the constructor and remove
-it in the destructor. It's that simple.
+Listening to native DOM events:
 
 ```js
 {
@@ -78,9 +86,7 @@ it in the destructor. It's that simple.
 }
 ```
 
-You can also identify resources to access them later. In this example, a socket
-connection is established for as long as the component is in the DOM.
-Additionally, the socket can only be used after it has fully initialized.
+Sockets:
 
 ```js
 {
@@ -108,6 +114,7 @@ Additionally, the socket can only be used after it has fully initialized.
 
   methods: {
     async sendMessage() {
+      // Reference resource. Promise fulfills when constructor finishes running.
       let socket = await this.$raii('socket');
 
       socket.send(this.message);
@@ -115,8 +122,6 @@ Additionally, the socket can only be used after it has fully initialized.
   }
 }
 ```
-
-Run `npm run examples` to see complete examples in action.
 
 
 ## Install
