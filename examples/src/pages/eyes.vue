@@ -1,8 +1,8 @@
 <template>
   <div>
-    <p>Sometimes you need to register event handlers for native events. Unlike
-    Vue.js events, those are not automatically removed by the framework. With
-    $raii you can organize your code such that.</p>
+    <p>Sometimes you need to listen to native DOM events. Unfortunately Vue.js
+    does not automatically deregister such event handlers. Fortunately, you can
+    overcome that problem with this plugin.</p>
 
     <div class="face">
       <div ref="leftEye" class="face__eye"><div class="face__eye__pupil" :style="leftPupilStyle"></div></div>
