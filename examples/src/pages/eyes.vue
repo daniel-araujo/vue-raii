@@ -111,14 +111,23 @@ export default {
 }
 
 .face__eye__pupil {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 1px;
+  height: 1px;
   position: absolute;
   top: 0;
   left: 20px;
-  background-color: black;
   transform-origin: 0 20px;
+}
+
+.face__eye__pupil:before {
+  display: block;
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-top: 1px;
+  margin-left: -4px;
+  background-color: black;
+  border-radius: 50%;
 }
 
 .face__mouth {
