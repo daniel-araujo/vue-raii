@@ -144,6 +144,58 @@ Vue.use(VueRaii)
 You will then have access to the `$raii` method in every Vue component.
 
 
+## Documentation
+
+### Creating resources
+
+Resources are created by passing an object to the `$raii` method. The call will
+return a promise that gets resolved when the resource is constructed and ready
+to use.
+
+Property    | Description
+------------|-------------------------------------------------
+id          | (optional) resource identifier. Must be a string and uniquely identify the resource. Necessary if you want to reference the resource later on.
+constructor | A function that is called to construct the resource. It must return the resource.
+destrctor   | (optional) A function that is called to destroy the resource.
+
+Example:
+
+```js
+await this.$raii({
+  id: 'timer',
+  constructor: () => setInterval(this.updateTime, 1000),
+  destructor: (resource) => clearInterval(resource),
+});
+```
+
+
+### Retrieving resources
+
+Pass the id as the only argument to the `$raii` method. The call will return a
+promise that gets resolved to the resource.
+
+You can call this right after you register the resource. The promise will
+resolve once the resource is constructed.
+
+Example:
+
+```js
+await this.$raii('timer');
+```
+
+### Manually destroying resources
+
+Pass a string that identifies the resource and the text `"destroy"` to the
+`$raii` method. It will return a promise that gets resolved when the resource is
+destroyed.
+
+Example:
+
+```js
+await this.$raii('timer', 'destroy');
+```
+
+
 ## Contributing
 
 The easiest way to contribute is by starring this project on GitHub!
