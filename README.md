@@ -185,7 +185,7 @@ await this.$raii('timer');
 
 ### Manually destroying resources
 
-Pass a string that identifies the resource and the text `"destroy"` to the
+Pass a string that identifies the resource and the string `"destroy"` to the
 `$raii` method. It will return a promise that gets resolved when the resource is
 destroyed.
 
