@@ -10,7 +10,7 @@
       <br>
 
       Message:
-      <form v-on:submit="sendMessage">
+      <form v-on:submit.prevent="sendMessage">
         <input v-model="message">
         <button>send</button>
       </form>
