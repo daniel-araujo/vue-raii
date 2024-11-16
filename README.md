@@ -156,7 +156,7 @@ Property    | Description
 ------------|-------------------------------------------------
 id          | (optional) resource identifier. Must be a string and uniquely identify the resource. Necessary if you want to reference the resource later on.
 constructor | A function that is called to construct the resource. It must return the resource.
-destrctor   | (optional) A function that is called to destroy the resource.
+destructor  | (optional) A function that is called to destroy the resource.
 
 Example:
 
