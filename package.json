@@ -1,6 +1,6 @@
 {
   "name": "vue-raii",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This Vue plugin allows you to bind JavaScript resources to the lifetime of a component.",
   "main": "src/vue-raii.js",
   "scripts": {
