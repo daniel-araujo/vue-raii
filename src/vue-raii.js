@@ -117,6 +117,7 @@ function raiiDestroyResource(id) {
 
         if (e === entry) {
           this._raii.all.splice(i, 1);
+          break;
         }
       }
 
