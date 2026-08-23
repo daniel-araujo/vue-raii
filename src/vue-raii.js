@@ -41,8 +41,8 @@ async function raiiGetResource(id) {
   if (id in this._raii.byId && !this._raii.byId[id].toDestroy) {
     return Promise.resolve(this._raii.byId[id].resource)
       .then((resource) => {
-        // For retrieval attempts made while it is being created.
-        if (!this._raii.byId[id].toDestroy) {
+        // For retrieval attempts made while it is being created or destroyed.
+        if (this._raii.byId[id] !== undefined && !this._raii.byId[id].toDestroy) {
           return resource;
         } else {
           throw new Error('Resource not found.');

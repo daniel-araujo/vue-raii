@@ -502,3 +502,25 @@ it('does nothing when destroying a resource while it is being destroyed', async 
 
   assert.equal(spy.callCount, 1);
 });
+
+it('rejects with "Resource not found." instead of throwing a TypeError when a destructor-less resource is destroyed right after being retrieved', async () => {
+  let vue = new Vue();
+
+  await vue.$raii({
+    id: 'asd',
+    constructor: () => 1
+  });
+
+  let getPromise = vue.$raii('asd');
+  let destroyPromise = vue.$raii('asd', 'destroy');
+
+  await assert.rejects(
+    async () => getPromise,
+    {
+      name: 'Error',
+      message: 'Resource not found.'
+    }
+  );
+
+  await destroyPromise;
+});
