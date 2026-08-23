@@ -30,6 +30,7 @@ function raiiSetup() {
     }
 
     delete this._raii;
+    this._raiiDestroyed = true;
   });
 }
 
@@ -133,6 +134,10 @@ exports.install = function (Vue) {
   }
 
   Vue.prototype.$raii = function (o, a) {
+    if (this._raiiDestroyed) {
+      throw new Error('Cannot use $raii after component has been destroyed.');
+    }
+
     if (!this._raii) {
       raiiSetup.call(this);
     }

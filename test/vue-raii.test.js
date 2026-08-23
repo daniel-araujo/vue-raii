@@ -524,3 +524,25 @@ it('rejects with "Resource not found." instead of throwing a TypeError when a de
 
   await destroyPromise;
 });
+
+it('throws when $raii is used after the component has been destroyed', async () => {
+  let vue = new Vue();
+
+  vue.$raii({
+    constructor: () => 1
+  });
+
+  vue.$destroy();
+
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.throws(
+    () => vue.$raii({
+      constructor: () => 1
+    }),
+    {
+      name: 'Error',
+      message: 'Cannot use $raii after component has been destroyed.'
+    }
+  );
+});
